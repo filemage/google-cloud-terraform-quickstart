@@ -1,10 +1,15 @@
+data "google_compute_image" "filemage_public_image" {
+  family  = "filemage-ubuntu"
+  project = "filemage-public"
+}
+
 resource "google_compute_instance_template" "filemage" {
   name_prefix  = "filemage-app-"
   machine_type = "f1-micro"
   tags         = ["filemage-app"]
 
   disk {
-    source_image = "https://www.googleapis.com/compute/v1/projects/filemage-public/global/images/filemage-ubuntu-1-5-18-20210706212325"
+    source_image = data.google_compute_image.filemage_public_image.self_link
   }
 
   network_interface {

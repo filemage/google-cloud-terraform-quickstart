@@ -13,7 +13,7 @@ resource "google_compute_instance" "db" {
   }
 
   network_interface {
-    network = "default"
+    network = google_compute_network.vpc.self_link
     access_config {}
   }
 

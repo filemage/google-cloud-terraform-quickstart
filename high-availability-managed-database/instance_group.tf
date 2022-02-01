@@ -4,6 +4,7 @@ data "google_compute_image" "filemage_public_image" {
 }
 
 resource "google_compute_instance_template" "filemage" {
+  depends_on = [ google_sql_database_instance.read_replica ]
   name_prefix  = "filemage-app-"
   machine_type = "f1-micro"
   tags         = ["filemage-app"]
@@ -13,14 +14,14 @@ resource "google_compute_instance_template" "filemage" {
   }
 
   network_interface {
-    network = "default"
+    network = google_compute_network.vpc.self_link
     access_config {}
   }
 
   metadata = {
     startup-script = templatefile("${path.module}/scripts/initialize-application.sh", {
       pg_password = var.pg_password,
-      pg_host     = google_compute_instance.db.network_interface.0.network_ip
+      pg_host     = google_dns_record_set.database.name
     })
   }
 

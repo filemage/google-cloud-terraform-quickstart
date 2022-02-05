@@ -1,9 +1,11 @@
 #!/bin/bash -ex
 
-# Need .pgpass to avoid password prompt.
+# Get database password from secrets manager so it's not visible in the metadata.
+PG_PASSWORD=$(gcloud secrets versions access "latest" --secret "filemage-database-password")
 
-# hostname:port:database:username:password
-echo "database.filemage.internal:5432:filemage-db:filemage:${pg_password}" > .pgpass
+# Need .pgpass to avoid password prompt.
+echo "database.filemage.internal:5432:filemage-db:filemage:$${PG_PASSWORD}" >> .pgpass
+echo "database.filemage.internal:5432:postgres:filemage:$${PG_PASSWORD}" >> .pgpass
 chmod 600 .pgpass
 
 # Configure the pg_partman extension and associated schema.
@@ -17,6 +19,12 @@ GRANT ALL ON SCHEMA partman TO filemage;
 GRANT ALL ON ALL TABLES IN SCHEMA partman TO filemage;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA partman TO filemage;
 GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA partman TO filemage;
+EOF
+
+PGPASSFILE=.pgpass psql -h database.filemage.internal -U filemage -d postgres << EOF
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+SELECT cron.schedule('pg-partman-background', '30 * * * *', 'SELECT partman.run_maintenance(p_analyze := false, p_jobmon := true)');
+UPDATE cron.job SET database = 'filemage-db' WHERE jobname = 'pg-partman-background';
 EOF
 
 rm .pgpass
@@ -63,15 +71,16 @@ tls_certificate: /opt/filemage/default.cert
 tls_certificate_key: /opt/filemage/default.key
 pg_host: database.filemage.internal
 pg_user: filemage
-pg_password: ${pg_password}
+pg_password: $${PG_PASSWORD}
 pg_database: filemage-db
 pg_ssl_mode: require
 sftp_host_keys:
   - /etc/filemage/ssh_host_rsa_key
 EOF
 
-# Write a session secret to each instance so cookies can be shared across instances.
-echo "UNSAFESECRET" > /opt/filemage/.secret
+# Write the same session secret to each instance so cookies can be shared across instances.
+APP_SECRET=$(gcloud secrets versions access "latest" --secret "filemage-application-secret")
+echo $APP_SECRET > /opt/filemage/.secret
 
 systemctl restart filemage
 

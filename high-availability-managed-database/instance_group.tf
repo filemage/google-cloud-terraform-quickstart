@@ -3,8 +3,27 @@ data "google_compute_image" "filemage_public_image" {
   project = "filemage-public"
 }
 
+resource "google_service_account" "instance" {
+  account_id   = "filamge-instance-account"
+  display_name = "FileMage Application Server Account"
+}
+
+data "google_iam_policy" "instance_read_secret" {
+  binding {
+    role = "roles/secretmanager.secretAccessor"
+    members = [
+      "serviceAccount:${google_service_account.instance.email}",
+    ]
+  }
+}
+
 resource "google_compute_instance_template" "filemage" {
-  depends_on = [ google_sql_database_instance.read_replica ]
+  depends_on = [
+    google_sql_database_instance.read_replica,
+    google_secret_manager_secret_version.database_password,
+    google_secret_manager_secret_version.application_secret,
+  ]
+
   name_prefix  = "filemage-app-"
   machine_type = "f1-micro"
   tags         = ["filemage-app"]
@@ -20,13 +39,17 @@ resource "google_compute_instance_template" "filemage" {
 
   metadata = {
     startup-script = templatefile("${path.module}/scripts/initialize-application.sh", {
-      pg_password = var.pg_password,
       pg_host     = google_dns_record_set.database.name
     })
   }
 
   lifecycle {
     create_before_destroy = true
+  }
+
+  service_account {
+    email  = google_service_account.instance.email
+    scopes = ["cloud-platform"]
   }
 }
 

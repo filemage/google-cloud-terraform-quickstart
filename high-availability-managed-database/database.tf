@@ -7,6 +7,17 @@ resource "google_sql_database" "main" {
   instance = google_sql_database_instance.main_primary.name
 }
 
+resource "google_sql_user" "db_user" {
+  depends_on = [
+    google_sql_database.main,
+    google_sql_database_instance.read_replica,
+  ]
+
+  name     = "filemage"
+  instance = google_sql_database_instance.main_primary.name
+  password = var.pg_password
+}
+
 resource "google_sql_database_instance" "main_primary" {
   depends_on = [
     google_service_networking_connection.private_vpc_connection
@@ -29,13 +40,12 @@ resource "google_sql_database_instance" "main_primary" {
     location_preference {
       zone = var.zone
     }
-  }
-}
 
-resource "google_sql_user" "db_user" {
-  name     = "filemage"
-  instance = google_sql_database_instance.main_primary.name
-  password = var.pg_password
+    database_flags {
+      name  = "cloudsql.enable_pg_cron"
+      value = "on"
+    }
+  }
 }
 
 resource "google_sql_database_instance" "read_replica" {
@@ -64,6 +74,11 @@ resource "google_sql_database_instance" "read_replica" {
 
     location_preference {
       zone = var.zone
+    }
+
+    database_flags {
+      name  = "cloudsql.enable_pg_cron"
+      value = "on"
     }
   }
 }

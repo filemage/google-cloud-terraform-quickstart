@@ -8,14 +8,10 @@ resource "google_sql_database" "main" {
 }
 
 resource "google_sql_user" "db_user" {
-  depends_on = [
-    google_sql_database.main,
-    google_sql_database_instance.read_replica,
-  ]
-
   name     = "filemage"
   instance = google_sql_database_instance.main_primary.name
   password = var.pg_password
+  deletion_policy = "ABANDON"
 }
 
 resource "google_sql_database_instance" "main_primary" {

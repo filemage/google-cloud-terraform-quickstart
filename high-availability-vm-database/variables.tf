@@ -1,6 +1,7 @@
 variable "pg_password" {
   type = string
   description = "PostgreSQL database password."
+  default = "passpass"
 }
 
 variable "region" {

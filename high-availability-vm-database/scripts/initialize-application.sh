@@ -50,6 +50,8 @@ pg_database: filemage
 pg_ssl_mode: require
 sftp_host_keys:
   - /etc/filemage/ssh_host_rsa_key
+ftp_proxy_protocol: yes
+sftp_proxy_protocol: yes
 EOF
 
 # Write a session secret to each instance so cookies can be shared across instances.

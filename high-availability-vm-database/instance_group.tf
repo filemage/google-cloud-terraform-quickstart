@@ -36,6 +36,16 @@ resource "google_compute_instance_group_manager" "filemage" {
   target_pools       = [google_compute_target_pool.default.id]
   target_size        = 2
 
+  named_port {
+    name = "ftp"
+    port = 21
+  }
+
+  named_port {
+    name = "sftp"
+    port = 2222
+  }
+
   version {
     instance_template = google_compute_instance_template.filemage.id
   }

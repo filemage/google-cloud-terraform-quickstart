@@ -2,7 +2,7 @@ resource "google_secret_manager_secret" "database_password" {
   secret_id = "filemage-database-password"
 
   replication {
-    automatic = true
+    auto {}
   }
 }
 
@@ -27,7 +27,7 @@ resource "google_secret_manager_secret" "application_secret" {
   secret_id = "filemage-application-secret"
 
   replication {
-    automatic = true
+    auto {}
   }
 }
 

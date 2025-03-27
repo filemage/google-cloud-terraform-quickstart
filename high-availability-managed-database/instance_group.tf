@@ -19,13 +19,13 @@ data "google_iam_policy" "instance_read_secret" {
 
 resource "google_compute_instance_template" "filemage" {
   depends_on = [
-    google_sql_database_instance.read_replica,
+    google_sql_database_instance.main_primary,
     google_secret_manager_secret_version.database_password,
     google_secret_manager_secret_version.application_secret,
   ]
 
   name_prefix  = "filemage-app-"
-  machine_type = "f1-micro"
+  machine_type = "n2-standard-2"
   tags         = ["filemage-app"]
 
   disk {
@@ -72,5 +72,9 @@ resource "google_compute_instance_group_manager" "filemage" {
 
   version {
     instance_template = google_compute_instance_template.filemage.id
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }

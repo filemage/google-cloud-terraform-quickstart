@@ -1,5 +1,7 @@
 #!/bin/bash -ex
 
+filemage update -y
+
 # Get database password from secrets manager so it's not visible in the metadata.
 PG_PASSWORD=$(gcloud secrets versions access "latest" --secret "filemage-database-password")
 
